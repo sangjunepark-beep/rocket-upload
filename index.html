@@ -38,31 +38,13 @@
     }
     header {
       text-align: center;
-      padding: 24px 0 20px;
+      padding: 20px 0 12px;
     }
-    .logo-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 14px;
-      background: linear-gradient(135deg, var(--brand) 0%, var(--accent) 100%);
-      color: #fff;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      margin-bottom: 14px;
-      box-shadow: 0 4px 14px rgba(230, 57, 70, 0.25);
-    }
-    header h1 {
-      font-size: 24px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      margin-bottom: 6px;
-    }
-    header p {
-      font-size: 14px;
-      color: var(--sub);
+    header .logo {
+      display: inline-block;
+      width: 100%;
+      max-width: 360px;
+      height: auto;
     }
     .btn-row {
       display: grid;
@@ -322,9 +304,7 @@
 <body>
   <div class="wrap">
     <header>
-      <div class="logo-badge">🚀 ROCKET PRINT FACTORY</div>
-      <h1>디자인 파일 접수</h1>
-      <p>DTF 스티커 · 빠르고 정확한 출력</p>
+      <img src="logo.png" alt="로켓출력공장 Rocket Printing" class="logo">
     </header>
 
     <section class="btn-row" aria-label="접수 방법 선택">
