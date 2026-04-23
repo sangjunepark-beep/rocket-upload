@@ -66,9 +66,10 @@
     }
     .btn-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 2.2fr 1fr;
       gap: 10px;
       margin-top: 18px;
+      align-items: stretch;
     }
     .btn {
       display: flex;
@@ -76,7 +77,6 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      padding: 22px 12px;
       border: none;
       border-radius: 14px;
       cursor: pointer;
@@ -84,37 +84,63 @@
       font-weight: 700;
       text-decoration: none;
       transition: transform 0.15s ease, box-shadow 0.15s ease;
-      min-height: 128px;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
     }
     .btn:active { transform: scale(0.98); }
+
+    /* 업로드 버튼 - 메인 (크게) */
     .btn-upload {
+      padding: 30px 14px;
+      min-height: 168px;
+      gap: 12px;
       background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
       color: #fff;
-      box-shadow: 0 8px 20px rgba(230, 57, 70, 0.28);
+      box-shadow: 0 10px 28px rgba(230, 57, 70, 0.32);
     }
-    .btn-upload:hover { box-shadow: 0 10px 24px rgba(230, 57, 70, 0.36); }
-    .btn-canva {
-      background: linear-gradient(135deg, var(--canva-1) 0%, var(--canva-2) 100%);
-      color: #fff;
-      box-shadow: 0 8px 20px rgba(125, 42, 232, 0.22);
-    }
-    .btn-canva:hover { box-shadow: 0 10px 24px rgba(125, 42, 232, 0.30); }
-    .btn .icon {
-      font-size: 30px;
+    .btn-upload:hover { box-shadow: 0 14px 32px rgba(230, 57, 70, 0.42); }
+    .btn-upload .icon {
+      font-size: 44px;
       line-height: 1;
     }
-    .btn .label {
-      font-size: 15px;
+    .btn-upload .label {
+      font-size: 18px;
       letter-spacing: -0.01em;
+      line-height: 1.25;
+      text-align: center;
     }
-    .btn .brand {
-      font-size: 11px;
+    .btn-upload .sub {
+      font-size: 11.5px;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+
+    /* 캔바 버튼 - 서브 (작게) */
+    .btn-canva {
+      padding: 16px 10px;
+      min-height: 168px;
+      gap: 8px;
+      background: linear-gradient(135deg, var(--canva-1) 0%, var(--canva-2) 100%);
+      color: #fff;
+      box-shadow: 0 5px 14px rgba(125, 42, 232, 0.20);
+    }
+    .btn-canva:hover { box-shadow: 0 7px 18px rgba(125, 42, 232, 0.28); }
+    .btn-canva .icon {
+      font-size: 24px;
+      line-height: 1;
+    }
+    .btn-canva .label {
+      font-size: 13px;
+      letter-spacing: -0.01em;
+      line-height: 1.25;
+      text-align: center;
+    }
+    .btn-canva .brand {
+      font-size: 10px;
       font-weight: 600;
-      opacity: 0.85;
+      opacity: 0.95;
       letter-spacing: 0.06em;
-      background: rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.22);
       padding: 2px 8px;
       border-radius: 999px;
     }
@@ -280,9 +306,15 @@
     footer strong { color: var(--text); }
 
     @media (max-width: 380px) {
-      .btn { min-height: 118px; padding: 18px 10px; }
-      .btn .icon { font-size: 26px; }
-      .btn .label { font-size: 14px; }
+      .btn-row { grid-template-columns: 2fr 1fr; gap: 8px; }
+      .btn-upload { min-height: 150px; padding: 24px 10px; gap: 10px; }
+      .btn-upload .icon { font-size: 38px; }
+      .btn-upload .label { font-size: 16px; }
+      .btn-upload .sub { font-size: 11px; }
+      .btn-canva { min-height: 150px; padding: 14px 8px; }
+      .btn-canva .icon { font-size: 22px; }
+      .btn-canva .label { font-size: 12px; }
+      .btn-canva .brand { font-size: 9.5px; padding: 2px 6px; }
       header h1 { font-size: 21px; }
     }
   </style>
@@ -298,11 +330,12 @@
     <section class="btn-row" aria-label="접수 방법 선택">
       <button type="button" id="uploadBtn" class="btn btn-upload" aria-controls="formSection" aria-expanded="false">
         <span class="icon" aria-hidden="true">📁</span>
-        <span class="label">디자인파일<br>업로드</span>
+        <span class="label">디자인파일 업로드</span>
+        <span class="sub">파일을 첨부하고 접수해주세요</span>
       </button>
       <a href="https://www.canva.com" target="_blank" rel="noopener noreferrer" class="btn btn-canva">
         <span class="icon" aria-hidden="true">🎨</span>
-        <span class="label">직접디자인<br>하기</span>
+        <span class="label">직접디자인 하기</span>
         <span class="brand">Canva</span>
       </a>
     </section>
