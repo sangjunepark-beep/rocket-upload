@@ -679,6 +679,8 @@
 
       // 허용 확장자
       var ALLOWED_EXT = ['ai', 'psd', 'jpg', 'jpeg', 'png'];
+      // 파일 선택 직후 base64로 변환해서 캐싱 (제출 시 재사용)
+      var cachedFiles = [];
 
       function getExt(name) {
         var m = String(name || '').toLowerCase().match(/\.([a-z0-9]+)$/);
@@ -739,7 +741,7 @@
         }
       });
 
-      // ---- 파일 검증 + 유효 파일만 필터 ----
+      // ---- 파일 검증 + 유효 파일만 필터 + 자동 처리 ----
       function validateAndSet(files) {
         var arr = Array.prototype.slice.call(files);
         var valid = [];
@@ -752,20 +754,82 @@
           showError(invalid);
         }
         if (valid.length) {
-          // DataTransfer로 FileList 재구성 (유효 파일만 유지)
           try {
             var dt = new DataTransfer();
             valid.forEach(function(f) { dt.items.add(f); });
             fileInput.files = dt.files;
           } catch (e) {
-            // 구형 브라우저 대응: 강제 교체 못할 때는 그대로 두고 나중에 submit 시점에 다시 검증
             console.warn('DataTransfer 미지원', e);
           }
+          renderFileList();
+          // 👉 파일 선택 즉시 base64 변환 + 애니메이션 표시
+          processFiles(valid);
         } else {
-          // 유효 파일 하나도 없으면 input 비우기
           fileInput.value = '';
+          cachedFiles = [];
+          renderFileList();
         }
-        renderFileList();
+      }
+
+      // ---- 파일 선택 직후 base64 변환 + 오버레이 애니메이션 ----
+      function processFiles(files) {
+        // 용량 검증
+        var total = 0;
+        for (var i = 0; i < files.length; i++) {
+          if (files[i].size > 10 * 1024 * 1024) {
+            modalMsg.innerHTML = '<strong>' + escapeHtml(files[i].name) + '</strong><br>파일당 10MB를 초과할 수 없습니다.';
+            errorModal.classList.add('show');
+            cachedFiles = [];
+            return;
+          }
+          total += files[i].size;
+        }
+        if (total > 20 * 1024 * 1024) {
+          modalMsg.innerHTML = '전체 첨부 용량은 <strong>20MB</strong>를 초과할 수 없습니다.<br>파일을 나눠서 선택해주세요.';
+          errorModal.classList.add('show');
+          cachedFiles = [];
+          return;
+        }
+
+        // 오버레이 표시
+        showUploading('파일 준비 중 (0/' + files.length + ')');
+
+        // base64 변환 체인
+        var temp = [];
+        var startTime = Date.now();
+        var chain = Promise.resolve();
+        files.forEach(function(f, idx) {
+          chain = chain.then(function() {
+            return fileToBase64(f).then(function(b64) {
+              temp.push({
+                name: f.name,
+                mime: f.type || 'application/octet-stream',
+                size: f.size,
+                base64: b64
+              });
+              uploadProgress.textContent = '파일 준비 중 (' + (idx + 1) + '/' + files.length + ')';
+            });
+          });
+        });
+
+        chain.then(function() {
+          cachedFiles = temp;
+          // 최소 700ms는 스피너 보여주기 (너무 빨라서 애니메이션 못 볼 때 방지)
+          var elapsed = Date.now() - startTime;
+          var minDelay = Math.max(0, 700 - elapsed);
+          setTimeout(function() {
+            showSuccess();
+            // 성공 반짝임 1.6초 후 오버레이 닫기
+            setTimeout(function() {
+              hideOverlay();
+            }, 1600);
+          }, minDelay);
+        }).catch(function(err) {
+          hideOverlay();
+          modalMsg.innerHTML = '파일 처리 오류가 발생했습니다.<br><span style="font-size:12px;color:#888;">' + escapeHtml(err.message || '알 수 없는 오류') + '</span>';
+          errorModal.classList.add('show');
+          cachedFiles = [];
+        });
       }
 
       // ---- 파일 목록 표시 ----
@@ -827,97 +891,47 @@
         });
       }
 
-      // 폼 제출 (fetch → Apps Script)
+      // 폼 제출 (캐시된 파일 전송)
       form.addEventListener('submit', function(e) {
         e.preventDefault();
 
-        // 기본 검증
-        if (!fileInput.files || fileInput.files.length === 0) {
+        if (cachedFiles.length === 0) {
           modalMsg.innerHTML = '디자인 파일을 첨부해주세요.';
           errorModal.classList.add('show');
           return;
         }
 
-        // 타입 재검증 (드롭/선택 단계에서 이미 걸러지지만 이중 안전장치)
-        var arr = Array.prototype.slice.call(fileInput.files);
-        var invalid = arr.filter(function(f) { return !isAllowed(f); });
-        if (invalid.length) {
-          showError(invalid);
-          return;
-        }
-
-        // 용량 검증
-        var total = 0;
-        for (var i = 0; i < arr.length; i++) {
-          if (arr[i].size > 10 * 1024 * 1024) {
-            modalMsg.innerHTML = '<strong>' + escapeHtml(arr[i].name) + '</strong><br>파일당 10MB를 초과할 수 없습니다.';
-            errorModal.classList.add('show');
-            return;
-          }
-          total += arr[i].size;
-        }
-        if (total > 20 * 1024 * 1024) {
-          modalMsg.innerHTML = '전체 첨부 용량은 <strong>20MB</strong>를 초과할 수 없습니다.<br>파일을 나눠서 접수해주세요.';
-          errorModal.classList.add('show');
-          return;
-        }
-
         submitBtn.disabled = true;
-        showUploading('파일 준비 중 (0/' + arr.length + ')');
+        submitBtn.textContent = '접수 중...';
 
-        // 파일을 모두 base64로 변환
-        var filesData = [];
-        var chain = Promise.resolve();
+        var payload = {
+          name:  document.getElementById('name').value.trim(),
+          phone: document.getElementById('phone').value.trim(),
+          memo:  document.getElementById('memo').value.trim(),
+          honey: document.getElementById('honey').value,
+          files: cachedFiles
+        };
 
-        arr.forEach(function(f, idx) {
-          chain = chain.then(function() {
-            return fileToBase64(f).then(function(b64) {
-              filesData.push({
-                name: f.name,
-                mime: f.type || 'application/octet-stream',
-                size: f.size,
-                base64: b64
-              });
-              uploadProgress.textContent = '파일 준비 중 (' + (idx + 1) + '/' + arr.length + ')';
-            });
-          });
-        });
-
-        chain
-          .then(function() {
-            uploadProgress.textContent = '서버로 전송 중...';
-            var payload = {
-              name:  document.getElementById('name').value.trim(),
-              phone: document.getElementById('phone').value.trim(),
-              memo:  document.getElementById('memo').value.trim(),
-              honey: document.getElementById('honey').value,
-              files: filesData
-            };
-            return fetch(APPS_SCRIPT_URL, {
-              method: 'POST',
-              body: JSON.stringify(payload)
-            });
-          })
+        fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        })
           .then(function(res) {
             if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
             return res.json();
           })
           .then(function(result) {
             if (result && result.ok) {
-              // 성공 애니메이션 → 1.8초 후 thanks 페이지로
-              showSuccess();
-              setTimeout(function() {
-                window.location.href = './thanks.html';
-              }, 1800);
+              window.location.href = './thanks.html';
             } else {
               throw new Error((result && result.error) || '접수 처리 실패');
             }
           })
           .catch(function(err) {
-            hideOverlay();
             modalMsg.innerHTML = '접수 중 오류가 발생했습니다.<br><span style="font-size:12px;color:#888;">' + escapeHtml(err.message) + '</span><br>잠시 후 다시 시도해주세요.';
             errorModal.classList.add('show');
             submitBtn.disabled = false;
+            submitBtn.textContent = '접수하기';
           });
       });
     })();
