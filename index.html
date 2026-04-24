@@ -302,7 +302,7 @@
     /* ---- 업로드 진행 오버레이 ---- */
     .upload-overlay {
       position: fixed;
-      inset: 0;
+      top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(255,255,255,0.94);
       backdrop-filter: blur(4px);
       -webkit-backdrop-filter: blur(4px);
@@ -399,7 +399,7 @@
     .success-check::after {
       content: '';
       position: absolute;
-      inset: -10px;
+      top: -10px; left: -10px; right: -10px; bottom: -10px;
       border-radius: 50%;
       border: 2px solid rgba(42,157,143,0.4);
       animation: ring 1s ease-out forwards;
@@ -436,7 +436,7 @@
     /* 반짝임 점들 */
     .sparkles {
       position: absolute;
-      inset: 0;
+      top: 0; left: 0; right: 0; bottom: 0;
       pointer-events: none;
     }
     .sparkle {
@@ -462,7 +462,7 @@
     /* ---- 에러 모달 ---- */
     .modal {
       position: fixed;
-      inset: 0;
+      top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.55);
       display: flex;
       align-items: center;
