@@ -336,7 +336,7 @@
       border: 5px solid #FEE7E9;
       border-top-color: var(--brand);
       border-radius: 50%;
-      animation: spin 0.9s linear infinite;
+      animation: spin 0.55s linear infinite;
     }
     @keyframes spin {
       to { transform: rotate(360deg); }
@@ -353,7 +353,7 @@
       display: inline-block;
       width: 16px;
       text-align: left;
-      animation: dots 1.4s steps(4, end) infinite;
+      animation: dots 0.8s steps(4, end) infinite;
     }
     @keyframes dots {
       0%   { content: ''; }
@@ -814,15 +814,15 @@
 
         chain.then(function() {
           cachedFiles = temp;
-          // 최소 700ms는 스피너 보여주기 (너무 빨라서 애니메이션 못 볼 때 방지)
+          // 최소 250ms는 스피너 보여주기
           var elapsed = Date.now() - startTime;
-          var minDelay = Math.max(0, 700 - elapsed);
+          var minDelay = Math.max(0, 250 - elapsed);
           setTimeout(function() {
             showSuccess();
-            // 성공 반짝임 1.6초 후 오버레이 닫기
+            // 성공 반짝임 900ms 후 오버레이 닫기
             setTimeout(function() {
               hideOverlay();
-            }, 1600);
+            }, 900);
           }, minDelay);
         }).catch(function(err) {
           hideOverlay();
