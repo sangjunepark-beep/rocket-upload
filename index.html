@@ -252,45 +252,74 @@
       resize: vertical;
       min-height: 90px;
     }
-    .file-drop {
+    /* 2개 파일 슬롯 */
+    .file-slots {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    @media (max-width: 380px) {
+      .file-slots { grid-template-columns: 1fr; }
+    }
+    .file-slot {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
       border: 2px dashed var(--border);
       border-radius: 10px;
-      padding: 18px 14px;
+      padding: 16px 10px;
+      min-height: 110px;
       text-align: center;
       background: #FAFAFC;
       cursor: pointer;
       transition: border-color 0.15s ease, background 0.15s ease;
     }
-    .file-drop:hover {
-      border-color: var(--brand);
-      background: #FFF5F5;
+    .file-slot:hover {
+      border-color: #1559FF;
+      background: #F2F5FF;
     }
-    .file-drop input[type="file"] {
-      display: none;
+    .file-slot input[type="file"] { display: none; }
+    .file-slot .slot-num {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #1559FF;
+      letter-spacing: 0.02em;
     }
-    .file-drop .icon {
-      font-size: 26px;
-      display: block;
-      margin-bottom: 6px;
-    }
-    .file-drop .txt {
-      font-size: 13px;
+    .file-slot .slot-optional {
+      font-weight: 500;
       color: var(--sub);
+      font-size: 10.5px;
     }
-    .file-drop .txt strong { color: var(--text); }
-    .file-list {
-      margin-top: 10px;
+    .file-slot .slot-icon {
+      font-size: 22px;
+      line-height: 1;
+      margin: 2px 0;
+    }
+    .file-slot .slot-text {
       font-size: 12.5px;
       color: var(--sub);
     }
-    .file-list .file-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 6px 10px;
-      background: #F3F4F6;
-      border-radius: 6px;
-      margin-bottom: 4px;
+    .file-slot .slot-text strong { color: var(--text); }
+    .file-slot .slot-filename {
+      font-size: 11.5px;
+      color: var(--text);
+      font-weight: 600;
+      max-width: 100%;
+      word-break: break-all;
+      padding: 0 4px;
+      display: none;
     }
+    .file-slot.has-file {
+      border-style: solid;
+      border-color: #1559FF;
+      background: #F2F5FF;
+    }
+    .file-slot.has-file .slot-text { display: none; }
+    .file-slot.has-file .slot-filename { display: block; }
+    .file-slot.has-file .slot-icon { color: #1559FF; }
     .hint {
       font-size: 11.5px;
       color: var(--sub);
@@ -650,17 +679,29 @@
 
         <div class="field">
           <label>디자인 파일<span class="req">*</span></label>
-          <label class="file-drop" for="fileInput">
-            <span class="icon" aria-hidden="true">📎</span>
-            <span class="txt"><strong>클릭해서 파일 선택</strong><br>또는 여기로 파일 끌어오기</span>
-            <input type="file" id="fileInput" name="attachment" accept=".ai,.psd,.jpg,.jpeg,.png,image/jpeg,image/png,application/postscript,application/illustrator,image/vnd.adobe.photoshop" multiple required>
-          </label>
-          <div id="fileList" class="file-list" aria-live="polite"></div>
+          <div class="file-slots">
+            <label class="file-slot" for="fileInput1" data-slot="1">
+              <span class="slot-num">파일 1</span>
+              <span class="slot-icon" aria-hidden="true">📎</span>
+              <span class="slot-text"><strong>클릭해서 선택</strong></span>
+              <span class="slot-filename" id="fileName1"></span>
+              <input type="file" id="fileInput1" name="attachment1" accept=".ai,.psd,.jpg,.jpeg,.png,image/jpeg,image/png,application/postscript,application/illustrator,image/vnd.adobe.photoshop" required>
+            </label>
+            <label class="file-slot file-slot-optional" for="fileInput2" data-slot="2">
+              <span class="slot-num">파일 2 <span class="slot-optional">(선택)</span></span>
+              <span class="slot-icon" aria-hidden="true">📎</span>
+              <span class="slot-text"><strong>클릭해서 선택</strong></span>
+              <span class="slot-filename" id="fileName2"></span>
+              <input type="file" id="fileInput2" name="attachment2" accept=".ai,.psd,.jpg,.jpeg,.png,image/jpeg,image/png,application/postscript,application/illustrator,image/vnd.adobe.photoshop">
+            </label>
+          </div>
           <p class="hint">
             <strong style="color:#E63946;">AI</strong>(일러스트레이터 · 글자는 반드시 깨서 주세요),
             <strong style="color:#E63946;">PSD</strong>(포토샵),
             <strong style="color:#E63946;">JPG</strong>,
-            <strong style="color:#E63946;">PNG</strong> 파일만 업로드 가능 · 파일당 최대 10MB
+            <strong style="color:#E63946;">PNG</strong> 파일만 업로드 가능
+            <br>
+            <span style="display:inline-block;margin-top:4px;">파일당 최대 <strong style="color:#E63946;">10MB</strong> · <strong style="color:#E63946;">최대 2개까지만 가능합니다</strong></span>
             <br>
             <span style="display:inline-block;margin-top:4px;">이보다 큰 파일은 <strong style="color:#E63946;">hs16447523@hanmail.net</strong> 으로 별도로 보내주세요.</span>
           </p>
@@ -726,11 +767,14 @@
     (function() {
       var uploadBtn = document.getElementById('uploadBtn');
       var formSection = document.getElementById('formSection');
-      var fileInput = document.getElementById('fileInput');
-      var fileList = document.getElementById('fileList');
+      var fileInput1 = document.getElementById('fileInput1');
+      var fileInput2 = document.getElementById('fileInput2');
+      var fileName1 = document.getElementById('fileName1');
+      var fileName2 = document.getElementById('fileName2');
+      var slot1 = fileInput1.closest('.file-slot');
+      var slot2 = fileInput2.closest('.file-slot');
       var form = document.getElementById('uploadForm');
       var submitBtn = document.getElementById('submitBtn');
-      var dropZone = document.querySelector('.file-drop');
       var uploadOverlay = document.getElementById('uploadOverlay');
       var uploadProgress = document.getElementById('uploadProgress');
       var errorModal = document.getElementById('errorModal');
@@ -739,8 +783,8 @@
 
       // 허용 확장자
       var ALLOWED_EXT = ['ai', 'psd', 'jpg', 'jpeg', 'png'];
-      // 파일 선택 직후 base64로 변환해서 캐싱 (제출 시 재사용)
-      var cachedFiles = [];
+      // 슬롯별 캐시 데이터 (base64)
+      var slotCache = { 1: null, 2: null };
 
       function getExt(name) {
         var m = String(name || '').toLowerCase().match(/\.([a-z0-9]+)$/);
@@ -751,16 +795,7 @@
       }
 
       // ---- 모달 제어 ----
-      function showError(invalidFiles) {
-        var names = invalidFiles.map(function(f){ return f.name; });
-        var msg;
-        if (names.length === 1) {
-          msg = '<strong>' + escapeHtml(names[0]) + '</strong><br>은(는) 업로드할 수 없는 형식입니다.';
-        } else {
-          msg = '<strong>' + names.length + '개 파일</strong>이 업로드할 수 없는 형식입니다.<br>' +
-                '<span style="font-size:12px;color:#888;">' + names.slice(0,3).map(escapeHtml).join(', ') +
-                (names.length > 3 ? ' 외 ' + (names.length - 3) + '개' : '') + '</span>';
-        }
+      function showError(msg) {
         modalMsg.innerHTML = msg;
         errorModal.classList.add('show');
       }
@@ -776,7 +811,6 @@
       // ---- 업로드 오버레이 제어 ----
       function showUploading(msg) {
         uploadOverlay.classList.remove('success');
-        // 인라인 스타일로 즉시 표시 (transition 건너뛰기)
         uploadOverlay.style.opacity = '1';
         uploadOverlay.style.pointerEvents = 'auto';
         uploadOverlay.classList.add('show');
@@ -794,7 +828,6 @@
 
       // ---- 업로드 버튼 → 폼 토글 ----
       uploadBtn.addEventListener('click', function() {
-        // 클릭 즉시 두근두근 애니메이션 정지
         uploadBtn.classList.add('opened');
         var isOpen = formSection.classList.contains('show');
         if (!isOpen) {
@@ -808,211 +841,113 @@
         }
       });
 
-      // ---- 파일 검증 + 유효 파일만 필터 + 자동 처리 ----
-      function validateAndSet(files) {
-        var arr = Array.prototype.slice.call(files);
-        var valid = [];
-        var invalid = [];
-        arr.forEach(function(f) {
-          if (isAllowed(f)) valid.push(f);
-          else invalid.push(f);
-        });
-        if (invalid.length) {
-          hideOverlay();
-          showError(invalid);
+      // ---- 슬롯 처리 함수 ----
+      function processSlot(slotNum, file, slotEl, fileNameEl, fileInputEl) {
+        // 타입 체크
+        if (!isAllowed(file)) {
+          fileInputEl.value = '';
+          showError('<strong>' + escapeHtml(file.name) + '</strong><br>은(는) 업로드할 수 없는 형식입니다.');
+          return;
         }
-        if (valid.length) {
-          // 모든 파일이 유효할 때는 DataTransfer 재구성 건너뛰기 (성능 최적화)
-          if (invalid.length > 0) {
-            try {
-              var dt = new DataTransfer();
-              valid.forEach(function(f) { dt.items.add(f); });
-              fileInput.files = dt.files;
-            } catch (e) {
-              console.warn('DataTransfer 미지원', e);
-            }
-          }
-          renderFileList();
-          processFiles(valid);
-        } else {
-          hideOverlay();
-          fileInput.value = '';
-          cachedFiles = [];
-          renderFileList();
-        }
-      }
-
-      // ---- 파일 선택 직후 base64 변환 + 오버레이 애니메이션 ----
-      function processFiles(files) {
-        // 용량 검증
-        var total = 0;
-        for (var i = 0; i < files.length; i++) {
-          if (files[i].size > 10 * 1024 * 1024) {
-            modalMsg.innerHTML = '<strong>' + escapeHtml(files[i].name) + '</strong><br>파일당 10MB를 초과할 수 없습니다.';
-            errorModal.classList.add('show');
-            cachedFiles = [];
-            return;
-          }
-          total += files[i].size;
-        }
-        if (total > 20 * 1024 * 1024) {
-          modalMsg.innerHTML = '전체 첨부 용량은 <strong>20MB</strong>를 초과할 수 없습니다.<br>파일을 나눠서 선택해주세요.';
-          errorModal.classList.add('show');
-          cachedFiles = [];
+        // 크기 체크
+        if (file.size > 10 * 1024 * 1024) {
+          fileInputEl.value = '';
+          showError('<strong>' + escapeHtml(file.name) + '</strong><br>파일당 10MB를 초과할 수 없습니다.');
           return;
         }
 
-        // 오버레이 표시
-        showUploading('파일 준비 중 (0/' + files.length + ')');
+        showUploading('파일 ' + slotNum + ' 준비 중...');
 
-        // base64 변환 체인
-        var temp = [];
-        var startTime = Date.now();
-        var chain = Promise.resolve();
-        files.forEach(function(f, idx) {
-          chain = chain.then(function() {
-            return fileToBase64(f).then(function(b64) {
-              temp.push({
-                name: f.name,
-                mime: f.type || 'application/octet-stream',
-                size: f.size,
-                base64: b64
-              });
-              uploadProgress.textContent = '파일 준비 중 (' + (idx + 1) + '/' + files.length + ')';
-            });
-          });
-        });
-
-        chain.then(function() {
-          cachedFiles = temp;
-          // 최소 250ms는 스피너 보여주기
-          var elapsed = Date.now() - startTime;
-          var minDelay = Math.max(0, 250 - elapsed);
-          setTimeout(function() {
-            showSuccess();
-            // 성공 반짝임 900ms 후 오버레이 닫기
-            setTimeout(function() {
-              hideOverlay();
-            }, 900);
-          }, minDelay);
-        }).catch(function(err) {
-          hideOverlay();
-          modalMsg.innerHTML = '파일 처리 오류가 발생했습니다.<br><span style="font-size:12px;color:#888;">' + escapeHtml(err.message || '알 수 없는 오류') + '</span>';
-          errorModal.classList.add('show');
-          cachedFiles = [];
-        });
-      }
-
-      // ---- 파일 목록 표시 ----
-      function renderFileList() {
-        fileList.innerHTML = '';
-        if (!fileInput.files || fileInput.files.length === 0) return;
-        for (var i = 0; i < fileInput.files.length; i++) {
-          var f = fileInput.files[i];
-          var div = document.createElement('div');
-          div.className = 'file-item';
-          var name = document.createElement('span');
-          name.textContent = f.name;
-          var size = document.createElement('span');
-          size.textContent = (f.size / 1024 / 1024).toFixed(2) + ' MB';
-          div.appendChild(name);
-          div.appendChild(size);
-          fileList.appendChild(div);
-        }
-      }
-      // ---- 파일 선택 직후 오버레이 즉시 표시 ----
-      // click 시점에 오버레이 생성 → 다이얼로그는 OS 모달로 위에 뜨고 오버레이는 뒤에 숨음
-      // → 다이얼로그 닫히는 순간 오버레이가 바로 보임 (change 이벤트 지연 무관)
-      var dialogCancelTimer = null;
-      var persistedFiles = []; // 누적된 파일 객체 배열 (재선택 시 추가)
-
-      fileInput.addEventListener('click', function() {
-        // 50ms 후 오버레이 (다이얼로그가 먼저 열리도록)
-        clearTimeout(dialogCancelTimer);
         setTimeout(function() {
-          showUploading('파일 확인 중...');
-        }, 50);
-        // 20초 내로 change도 cancel도 없으면 안전하게 숨김
-        dialogCancelTimer = setTimeout(function() {
-          if (!fileInput.files || fileInput.files.length === 0) hideOverlay();
+          fileToBase64(file).then(function(b64) {
+            slotCache[slotNum] = {
+              name: file.name,
+              mime: file.type || 'application/octet-stream',
+              size: file.size,
+              base64: b64
+            };
+            // UI 업데이트
+            slotEl.classList.add('has-file');
+            fileNameEl.textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + ' MB)';
+            // 성공 애니메이션
+            showSuccess();
+            setTimeout(function() { hideOverlay(); }, 800);
+          }).catch(function(err) {
+            hideOverlay();
+            slotCache[slotNum] = null;
+            showError('파일 처리 오류: ' + escapeHtml(err.message || '알 수 없는 오류'));
+          });
+        }, 0);
+      }
+
+      // ---- 슬롯 1 ----
+      var dialogTimer1 = null;
+      fileInput1.addEventListener('click', function() {
+        clearTimeout(dialogTimer1);
+        setTimeout(function() { showUploading('파일 1 확인 중...'); }, 50);
+        dialogTimer1 = setTimeout(function() {
+          if (!fileInput1.files || fileInput1.files.length === 0) hideOverlay();
         }, 20000);
       });
-
-      // cancel 이벤트 (Chromium 113+, Firefox, Safari): 사용자 취소 시 즉시 숨김
-      fileInput.addEventListener('cancel', function() {
-        clearTimeout(dialogCancelTimer);
+      fileInput1.addEventListener('cancel', function() {
+        clearTimeout(dialogTimer1);
         hideOverlay();
       });
+      fileInput1.addEventListener('change', function() {
+        clearTimeout(dialogTimer1);
+        if (!fileInput1.files || fileInput1.files.length === 0) {
+          hideOverlay();
+          return;
+        }
+        processSlot(1, fileInput1.files[0], slot1, fileName1, fileInput1);
+      });
 
-      // Fallback: window focus 복귀 감지 (일부 브라우저에서만 동작)
-      var fallbackFocusCheck = function() {
-        // change 이벤트가 곧 올 것으로 예상되므로 한 번만 체크
-        setTimeout(function() {
-          if (!fileInput.files || fileInput.files.length === 0) {
-            // 취소로 판단 — 이미 cancel 이벤트로 처리됐거나 타이머로 처리될 것
+      // ---- 슬롯 2 ----
+      var dialogTimer2 = null;
+      fileInput2.addEventListener('click', function() {
+        clearTimeout(dialogTimer2);
+        setTimeout(function() { showUploading('파일 2 확인 중...'); }, 50);
+        dialogTimer2 = setTimeout(function() {
+          if (!fileInput2.files || fileInput2.files.length === 0) hideOverlay();
+        }, 20000);
+      });
+      fileInput2.addEventListener('cancel', function() {
+        clearTimeout(dialogTimer2);
+        hideOverlay();
+      });
+      fileInput2.addEventListener('change', function() {
+        clearTimeout(dialogTimer2);
+        if (!fileInput2.files || fileInput2.files.length === 0) {
+          hideOverlay();
+          return;
+        }
+        processSlot(2, fileInput2.files[0], slot2, fileName2, fileInput2);
+      });
+
+      // ---- 드래그 & 드롭 (각 슬롯별) ----
+      [
+        { el: slot1, num: 1, name: fileName1, input: fileInput1 },
+        { el: slot2, num: 2, name: fileName2, input: fileInput2 }
+      ].forEach(function(s) {
+        ['dragenter','dragover'].forEach(function(ev) {
+          s.el.addEventListener(ev, function(e) {
+            e.preventDefault(); e.stopPropagation();
+            s.el.style.borderColor = '#1559FF';
+            s.el.style.background = '#E8EFFF';
+          });
+        });
+        ['dragleave','drop'].forEach(function(ev) {
+          s.el.addEventListener(ev, function(e) {
+            e.preventDefault(); e.stopPropagation();
+            s.el.style.borderColor = '';
+            s.el.style.background = '';
+          });
+        });
+        s.el.addEventListener('drop', function(e) {
+          if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+            processSlot(s.num, e.dataTransfer.files[0], s.el, s.name, s.input);
           }
-        }, 300);
-      };
-      window.addEventListener('focus', fallbackFocusCheck);
-
-      fileInput.addEventListener('change', function() {
-        clearTimeout(dialogCancelTimer);
-        if (!fileInput.files || fileInput.files.length === 0) {
-          hideOverlay();
-          return;
-        }
-
-        // 새로 선택된 파일을 기존 누적 파일에 추가 (이름+크기로 중복 제거)
-        var newFiles = Array.prototype.slice.call(fileInput.files);
-        var existingKeys = persistedFiles.map(function(f) { return f.name + '|' + f.size; });
-        var trulyNew = newFiles.filter(function(f) { return existingKeys.indexOf(f.name + '|' + f.size) === -1; });
-
-        if (trulyNew.length === 0) {
-          // 전부 중복 - 오버레이 닫고 종료
-          hideOverlay();
-          return;
-        }
-
-        // 누적 + DataTransfer로 fileInput.files 동기화
-        persistedFiles = persistedFiles.concat(trulyNew);
-        try {
-          var dt = new DataTransfer();
-          persistedFiles.forEach(function(f) { dt.items.add(f); });
-          fileInput.files = dt.files;
-        } catch (e) {
-          console.warn('DataTransfer 미지원, 누적 동기화 실패', e);
-        }
-
-        showUploading('파일 확인 중...');
-        setTimeout(function() {
-          validateAndSet(fileInput.files);
-        }, 0);
-      });
-
-      // ---- 드래그 & 드롭 ----
-      ['dragenter','dragover'].forEach(function(ev) {
-        dropZone.addEventListener(ev, function(e) {
-          e.preventDefault(); e.stopPropagation();
-          dropZone.style.borderColor = 'var(--brand)';
-          dropZone.style.background = '#FFF5F5';
         });
-      });
-      ['dragleave','drop'].forEach(function(ev) {
-        dropZone.addEventListener(ev, function(e) {
-          e.preventDefault(); e.stopPropagation();
-          dropZone.style.borderColor = '';
-          dropZone.style.background = '';
-        });
-      });
-      dropZone.addEventListener('drop', function(e) {
-        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
-          showUploading('파일 확인 중...');
-          var droppedFiles = e.dataTransfer.files;
-          // setTimeout(0)으로 오버레이 paint 완료 후 처리
-          setTimeout(function() {
-            validateAndSet(droppedFiles);
-          }, 0);
-        }
       });
 
       // Apps Script 웹앱 URL (Google Apps Script - hanasmmake@gmail.com 발송)
@@ -1032,13 +967,16 @@
         });
       }
 
-      // 폼 제출 (캐시된 파일 전송)
+      // 폼 제출 (슬롯에서 파일 수집)
       form.addEventListener('submit', function(e) {
         e.preventDefault();
 
-        if (cachedFiles.length === 0) {
-          modalMsg.innerHTML = '디자인 파일을 첨부해주세요.';
-          errorModal.classList.add('show');
+        var files = [];
+        if (slotCache[1]) files.push(slotCache[1]);
+        if (slotCache[2]) files.push(slotCache[2]);
+
+        if (files.length === 0) {
+          showError('디자인 파일을 첨부해주세요.');
           return;
         }
 
@@ -1050,7 +988,7 @@
           phone: document.getElementById('phone').value.trim(),
           memo:  document.getElementById('memo').value.trim(),
           honey: document.getElementById('honey').value,
-          files: cachedFiles
+          files: files
         };
 
         fetch(APPS_SCRIPT_URL, {
@@ -1069,8 +1007,7 @@
             }
           })
           .catch(function(err) {
-            modalMsg.innerHTML = '접수 중 오류가 발생했습니다.<br><span style="font-size:12px;color:#888;">' + escapeHtml(err.message) + '</span><br>잠시 후 다시 시도해주세요.';
-            errorModal.classList.add('show');
+            showError('접수 중 오류가 발생했습니다.<br><span style="font-size:12px;color:#888;">' + escapeHtml(err.message) + '</span><br>잠시 후 다시 시도해주세요.');
             submitBtn.disabled = false;
             submitBtn.textContent = '접수하기';
           });
