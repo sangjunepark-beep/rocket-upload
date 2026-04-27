@@ -69,8 +69,27 @@
       -webkit-tap-highlight-color: transparent;
       user-select: none;
     }
-    .btn-img:hover { box-shadow: 0 12px 28px rgba(0,0,0,0.16); transform: translateY(-2px); }
+    .btn-img:hover { box-shadow: 0 12px 28px rgba(0,0,0,0.16); }
     .btn-img:active { transform: scale(0.985); }
+
+    /* 업로드 버튼 두근두근 (대기 상태에서 사용자 주목 유도) */
+    @keyframes heartbeat {
+      0%   { transform: scale(1); }
+      14%  { transform: scale(1.05); }
+      28%  { transform: scale(1); }
+      42%  { transform: scale(1.05); }
+      70%, 100% { transform: scale(1); }
+    }
+    .btn-img-upload {
+      animation: heartbeat 1.6s ease-in-out infinite;
+      transform-origin: center center;
+    }
+    .btn-img-upload:hover { animation-play-state: paused; }
+    .btn-img-upload:active { animation: none; }
+    .btn-img-upload.opened { animation: none; transform: scale(1); }
+    @media (prefers-reduced-motion: reduce) {
+      .btn-img-upload { animation: none; }
+    }
     .btn-img img {
       display: block;
       width: 100%;
@@ -747,6 +766,8 @@
 
       // ---- 업로드 버튼 → 폼 토글 ----
       uploadBtn.addEventListener('click', function() {
+        // 클릭 즉시 두근두근 애니메이션 정지
+        uploadBtn.classList.add('opened');
         var isOpen = formSection.classList.contains('show');
         if (!isOpen) {
           formSection.classList.add('show');
