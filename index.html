@@ -330,6 +330,23 @@
       color: var(--sub);
     }
     footer strong { color: var(--text); }
+    .kakao-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: #FEE500;
+      color: #3C1E1E;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      transition: box-shadow 0.15s ease, transform 0.15s ease;
+    }
+    .kakao-btn:hover { box-shadow: 0 4px 10px rgba(0,0,0,0.12); transform: translateY(-1px); }
+    .kakao-btn:active { transform: scale(0.98); }
+    .kakao-icon { display: inline-flex; align-items: center; }
 
     @media (max-width: 380px) {
       .btn-row { gap: 8px; }
@@ -653,6 +670,14 @@
     <footer>
       <strong>하나사인몰 · 로켓출력공장</strong><br>
       문의: hs16447523@hanmail.net &nbsp;|&nbsp; 전화: 1644-7523
+      <div style="margin-top:10px;">
+        <a href="http://pf.kakao.com/_pUxcLj" target="_blank" rel="noopener" class="kakao-btn">
+          <span class="kakao-icon" aria-hidden="true">
+            <svg viewBox="0 0 36 36" width="18" height="18" xmlns="http://www.w3.org/2000/svg"><path fill="#3C1E1E" d="M18 6c-7.18 0-13 4.49-13 10.04 0 3.51 2.34 6.59 5.86 8.39-.26.97-.95 3.55-1.09 4.1-.17.7.26.69.55.5.22-.14 3.49-2.37 4.91-3.34.91.13 1.83.2 2.77.2 7.18 0 13-4.49 13-10.04S25.18 6 18 6z"/></svg>
+          </span>
+          카카오톡 채널 추가
+        </a>
+      </div>
     </footer>
   </div>
 
@@ -896,6 +921,7 @@
       // click 시점에 오버레이 생성 → 다이얼로그는 OS 모달로 위에 뜨고 오버레이는 뒤에 숨음
       // → 다이얼로그 닫히는 순간 오버레이가 바로 보임 (change 이벤트 지연 무관)
       var dialogCancelTimer = null;
+      var persistedFiles = []; // 누적된 파일 객체 배열 (재선택 시 추가)
 
       fileInput.addEventListener('click', function() {
         // 50ms 후 오버레이 (다이얼로그가 먼저 열리도록)
@@ -928,15 +954,36 @@
 
       fileInput.addEventListener('change', function() {
         clearTimeout(dialogCancelTimer);
-        if (fileInput.files && fileInput.files.length > 0) {
-          showUploading('파일 확인 중...');  // 이미 떠있으면 idempotent
-          // setTimeout(0)으로 오버레이 paint 완료 후 무거운 처리
-          setTimeout(function() {
-            validateAndSet(fileInput.files);
-          }, 0);
-        } else {
+        if (!fileInput.files || fileInput.files.length === 0) {
           hideOverlay();
+          return;
         }
+
+        // 새로 선택된 파일을 기존 누적 파일에 추가 (이름+크기로 중복 제거)
+        var newFiles = Array.prototype.slice.call(fileInput.files);
+        var existingKeys = persistedFiles.map(function(f) { return f.name + '|' + f.size; });
+        var trulyNew = newFiles.filter(function(f) { return existingKeys.indexOf(f.name + '|' + f.size) === -1; });
+
+        if (trulyNew.length === 0) {
+          // 전부 중복 - 오버레이 닫고 종료
+          hideOverlay();
+          return;
+        }
+
+        // 누적 + DataTransfer로 fileInput.files 동기화
+        persistedFiles = persistedFiles.concat(trulyNew);
+        try {
+          var dt = new DataTransfer();
+          persistedFiles.forEach(function(f) { dt.items.add(f); });
+          fileInput.files = dt.files;
+        } catch (e) {
+          console.warn('DataTransfer 미지원, 누적 동기화 실패', e);
+        }
+
+        showUploading('파일 확인 중...');
+        setTimeout(function() {
+          validateAndSet(fileInput.files);
+        }, 0);
       });
 
       // ---- 드래그 & 드롭 ----
