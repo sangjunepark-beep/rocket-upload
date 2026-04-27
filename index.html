@@ -609,6 +609,8 @@
             <strong style="color:#E63946;">PSD</strong>(포토샵),
             <strong style="color:#E63946;">JPG</strong>,
             <strong style="color:#E63946;">PNG</strong> 파일만 업로드 가능 · 파일당 최대 10MB
+            <br>
+            <span style="display:inline-block;margin-top:4px;">이보다 큰 파일은 <a href="mailto:hs16447523@hanmail.net" style="color:#E63946;font-weight:600;text-decoration:underline;">hs16447523@hanmail.net</a> 으로 별도로 보내주세요.</span>
           </p>
         </div>
 
@@ -947,6 +949,53 @@
       }
 
       // 폼 제출 (캐시된 파일 전송)
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        if (cachedFiles.length === 0) {
+          modalMsg.innerHTML = '디자인 파일을 첨부해주세요.';
+          errorModal.classList.add('show');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = '접수 중...';
+
+        var payload = {
+          name:  document.getElementById('name').value.trim(),
+          phone: document.getElementById('phone').value.trim(),
+          memo:  document.getElementById('memo').value.trim(),
+          honey: document.getElementById('honey').value,
+          files: cachedFiles
+        };
+
+        fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        })
+          .then(function(res) {
+            if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
+            return res.json();
+          })
+          .then(function(result) {
+            if (result && result.ok) {
+              window.location.href = './thanks.html';
+            } else {
+              throw new Error((result && result.error) || '접수 처리 실패');
+            }
+          })
+          .catch(function(err) {
+            modalMsg.innerHTML = '접수 중 오류가 발생했습니다.<br><span style="font-size:12px;color:#888;">' + escapeHtml(err.message) + '</span><br>잠시 후 다시 시도해주세요.';
+            errorModal.classList.add('show');
+            submitBtn.disabled = false;
+            submitBtn.textContent = '접수하기';
+          });
+      });
+    })();
+  </script>
+</body>
+</html>
+ (캐시된 파일 전송)
       form.addEventListener('submit', function(e) {
         e.preventDefault();
 
